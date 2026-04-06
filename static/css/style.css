@@ -68,6 +68,32 @@ h1 {
     background: rgba(255, 255, 255, 0.1);
 }
 
+.sort-select {
+    padding: 0.75rem 1.25rem;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 25px;
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='white' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    padding-right: 2.5rem;
+}
+
+.sort-select option {
+    background: #1a1a2e;
+    color: #fff;
+}
+
+.sort-select:focus {
+    outline: none;
+    border-color: #00d9ff;
+}
+
 .btn-refresh {
     padding: 0.75rem 1.5rem;
     border: none;

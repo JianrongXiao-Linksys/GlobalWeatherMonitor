@@ -1,5 +1,6 @@
 // Global state
 let weatherData = [];
+let originalOrder = [];
 let useCelsius = true;
 let refreshInterval = null;
 
@@ -10,6 +11,7 @@ const errorEl = document.getElementById('error');
 const errorMessage = document.getElementById('error-message');
 const updateTime = document.getElementById('update-time');
 const searchInput = document.getElementById('search');
+const sortSelect = document.getElementById('sort');
 const refreshBtn = document.getElementById('refresh');
 const unitC = document.getElementById('unit-c');
 const unitF = document.getElementById('unit-f');
@@ -28,8 +30,9 @@ async function loadWeather() {
         }
 
         weatherData = result.data;
+        originalOrder = [...result.data];
         updateTime.textContent = formatTime(result.updated);
-        renderWeather(weatherData);
+        renderWeather(sortData(weatherData));
     } catch (error) {
         showError(error.message);
     } finally {
@@ -111,6 +114,36 @@ function filterBySearch(data) {
     );
 }
 
+// Sort data based on selected option
+function sortData(data) {
+    const sortValue = sortSelect.value;
+    const sorted = [...data];
+
+    switch (sortValue) {
+        case 'city-asc':
+            sorted.sort((a, b) => a.city.localeCompare(b.city));
+            break;
+        case 'city-desc':
+            sorted.sort((a, b) => b.city.localeCompare(a.city));
+            break;
+        case 'country-asc':
+            sorted.sort((a, b) => getCountryName(a.country).localeCompare(getCountryName(b.country)));
+            break;
+        case 'country-desc':
+            sorted.sort((a, b) => getCountryName(b.country).localeCompare(getCountryName(a.country)));
+            break;
+        case 'temp-asc':
+            sorted.sort((a, b) => a.temp - b.temp);
+            break;
+        case 'temp-desc':
+            sorted.sort((a, b) => b.temp - a.temp);
+            break;
+        default:
+            return [...originalOrder];
+    }
+    return sorted;
+}
+
 // Get country name from code
 function getCountryName(code) {
     const countries = {
@@ -173,7 +206,11 @@ refreshBtn.addEventListener('click', () => {
 });
 
 searchInput.addEventListener('input', () => {
-    renderWeather(weatherData);
+    renderWeather(sortData(weatherData));
+});
+
+sortSelect.addEventListener('change', () => {
+    renderWeather(sortData(weatherData));
 });
 
 unitC.addEventListener('click', () => {
@@ -181,7 +218,7 @@ unitC.addEventListener('click', () => {
         useCelsius = true;
         unitC.classList.add('active');
         unitF.classList.remove('active');
-        renderWeather(weatherData);
+        renderWeather(sortData(weatherData));
     }
 });
 
@@ -190,7 +227,7 @@ unitF.addEventListener('click', () => {
         useCelsius = false;
         unitF.classList.add('active');
         unitC.classList.remove('active');
-        renderWeather(weatherData);
+        renderWeather(sortData(weatherData));
     }
 });
 

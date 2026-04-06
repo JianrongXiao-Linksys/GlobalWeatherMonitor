@@ -16,6 +16,15 @@
             <p class="subtitle">Real-time weather data from major cities worldwide</p>
             <div class="controls">
                 <input type="text" id="search" placeholder="Search city..." class="search-input">
+                <select id="sort" class="sort-select">
+                    <option value="default">Default Order</option>
+                    <option value="city-asc">City (A-Z)</option>
+                    <option value="city-desc">City (Z-A)</option>
+                    <option value="country-asc">Country (A-Z)</option>
+                    <option value="country-desc">Country (Z-A)</option>
+                    <option value="temp-asc">Temp (Low-High)</option>
+                    <option value="temp-desc">Temp (High-Low)</option>
+                </select>
                 <button id="refresh" class="btn-refresh">
                     <span class="refresh-icon">&#8635;</span> Refresh
                 </button>

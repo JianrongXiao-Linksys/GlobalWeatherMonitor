@@ -1,4 +1,6 @@
 """Global Weather Monitor - Flask Backend using Open-Meteo (Free, No API Key)"""
+from typing import Optional
+from concurrent.futures import ThreadPoolExecutor
 import requests
 from flask import Flask, render_template, jsonify
 from datetime import datetime
@@ -59,7 +61,7 @@ CITIES = [
 ]
 
 
-def fetch_weather(city: dict) -> dict | None:
+def fetch_weather(city: dict) -> Optional[dict]:
     """Fetch weather data for a single city using Open-Meteo."""
     try:
         params = {
@@ -101,12 +103,11 @@ def index():
 
 @app.route('/api/weather')
 def get_all_weather():
-    """Get weather data for all cities."""
-    weather_data = []
-    for city in CITIES:
-        data = fetch_weather(city)
-        if data:
-            weather_data.append(data)
+    """Get weather data for all cities using parallel requests."""
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        results = list(executor.map(fetch_weather, CITIES))
+
+    weather_data = [r for r in results if r is not None]
 
     return jsonify({
         'data': weather_data,
@@ -130,4 +131,4 @@ def get_city_weather(city_name: str):
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='127.0.0.1', port=3000, debug=True)
