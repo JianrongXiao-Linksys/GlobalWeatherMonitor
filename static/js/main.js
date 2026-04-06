@@ -29,13 +29,6 @@ async function loadWeather() {
 
         weatherData = result.data;
         updateTime.textContent = formatTime(result.updated);
-
-        // Show demo mode banner if applicable
-        const demoBanner = document.getElementById('demo-banner');
-        if (result.demo && demoBanner) {
-            demoBanner.classList.remove('hidden');
-        }
-
         renderWeather(weatherData);
     } catch (error) {
         showError(error.message);

@@ -1,17 +1,37 @@
-"""Global Weather Monitor - Flask Backend"""
-import os
+"""Global Weather Monitor - Flask Backend using Open-Meteo (Free, No API Key)"""
 import requests
 from flask import Flask, render_template, jsonify
 from datetime import datetime
-from dotenv import load_dotenv
-
-load_dotenv()
 
 app = Flask(__name__)
 
-# OpenWeatherMap API configuration
-API_KEY = os.getenv('OPENWEATHER_API_KEY', '')
-BASE_URL = 'https://api.openweathermap.org/data/2.5/weather'
+# Open-Meteo API (free, no API key required)
+BASE_URL = 'https://api.open-meteo.com/v1/forecast'
+
+# Weather code to description mapping
+WEATHER_CODES = {
+    0: ('Clear Sky', '01d'),
+    1: ('Mainly Clear', '01d'),
+    2: ('Partly Cloudy', '02d'),
+    3: ('Overcast', '03d'),
+    45: ('Foggy', '50d'),
+    48: ('Depositing Rime Fog', '50d'),
+    51: ('Light Drizzle', '09d'),
+    53: ('Moderate Drizzle', '09d'),
+    55: ('Dense Drizzle', '09d'),
+    61: ('Slight Rain', '10d'),
+    63: ('Moderate Rain', '10d'),
+    65: ('Heavy Rain', '10d'),
+    71: ('Slight Snow', '13d'),
+    73: ('Moderate Snow', '13d'),
+    75: ('Heavy Snow', '13d'),
+    80: ('Slight Rain Showers', '09d'),
+    81: ('Moderate Rain Showers', '09d'),
+    82: ('Violent Rain Showers', '09d'),
+    95: ('Thunderstorm', '11d'),
+    96: ('Thunderstorm with Hail', '11d'),
+    99: ('Thunderstorm with Heavy Hail', '11d'),
+}
 
 # Major cities around the world with coordinates
 CITIES = [
@@ -35,35 +55,37 @@ CITIES = [
     {'name': 'Mexico City', 'country': 'MX', 'lat': 19.4326, 'lon': -99.1332},
     {'name': 'Bangkok', 'country': 'TH', 'lat': 13.7563, 'lon': 100.5018},
     {'name': 'Istanbul', 'country': 'TR', 'lat': 41.0082, 'lon': 28.9784},
+    {'name': 'Shanghai', 'country': 'CN', 'lat': 31.2304, 'lon': 121.4737},
 ]
 
 
 def fetch_weather(city: dict) -> dict | None:
-    """Fetch weather data for a single city."""
-    if not API_KEY:
-        return None
-
+    """Fetch weather data for a single city using Open-Meteo."""
     try:
         params = {
-            'lat': city['lat'],
-            'lon': city['lon'],
-            'appid': API_KEY,
-            'units': 'metric'
+            'latitude': city['lat'],
+            'longitude': city['lon'],
+            'current': 'temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,surface_pressure',
+            'timezone': 'auto'
         }
         response = requests.get(BASE_URL, params=params, timeout=10)
         response.raise_for_status()
         data = response.json()
+        current = data['current']
+
+        weather_code = current.get('weather_code', 0)
+        description, icon = WEATHER_CODES.get(weather_code, ('Unknown', '01d'))
 
         return {
             'city': city['name'],
             'country': city['country'],
-            'temp': round(data['main']['temp'], 1),
-            'feels_like': round(data['main']['feels_like'], 1),
-            'humidity': data['main']['humidity'],
-            'description': data['weather'][0]['description'].title(),
-            'icon': data['weather'][0]['icon'],
-            'wind_speed': round(data['wind']['speed'] * 3.6, 1),  # m/s to km/h
-            'pressure': data['main']['pressure'],
+            'temp': round(current['temperature_2m'], 1),
+            'feels_like': round(current['apparent_temperature'], 1),
+            'humidity': current['relative_humidity_2m'],
+            'description': description,
+            'icon': icon,
+            'wind_speed': round(current['wind_speed_10m'], 1),
+            'pressure': round(current['surface_pressure']),
             'timestamp': datetime.utcnow().isoformat()
         }
     except requests.RequestException as e:
@@ -77,43 +99,9 @@ def index():
     return render_template('index.html')
 
 
-def get_demo_data() -> list[dict]:
-    """Return demo weather data when API key is not configured."""
-    import random
-    demo_weather = [
-        ('Clear Sky', '01d'), ('Few Clouds', '02d'), ('Scattered Clouds', '03d'),
-        ('Broken Clouds', '04d'), ('Light Rain', '10d'), ('Sunny', '01d')
-    ]
-    data = []
-    for city in CITIES:
-        desc, icon = random.choice(demo_weather)
-        base_temp = 20 + random.randint(-15, 20)
-        data.append({
-            'city': city['name'],
-            'country': city['country'],
-            'temp': base_temp,
-            'feels_like': base_temp + random.randint(-3, 3),
-            'humidity': random.randint(30, 90),
-            'description': desc,
-            'icon': icon,
-            'wind_speed': round(random.uniform(5, 30), 1),
-            'pressure': random.randint(1000, 1025),
-            'timestamp': datetime.utcnow().isoformat()
-        })
-    return data
-
-
 @app.route('/api/weather')
 def get_all_weather():
     """Get weather data for all cities."""
-    if not API_KEY:
-        return jsonify({
-            'data': get_demo_data(),
-            'updated': datetime.utcnow().isoformat(),
-            'count': len(CITIES),
-            'demo': True
-        })
-
     weather_data = []
     for city in CITIES:
         data = fetch_weather(city)
@@ -130,9 +118,6 @@ def get_all_weather():
 @app.route('/api/weather/<city_name>')
 def get_city_weather(city_name: str):
     """Get weather data for a specific city."""
-    if not API_KEY:
-        return jsonify({'error': 'API key not configured'}), 500
-
     city = next((c for c in CITIES if c['name'].lower() == city_name.lower()), None)
     if not city:
         return jsonify({'error': 'City not found'}), 404
@@ -145,6 +130,4 @@ def get_city_weather(city_name: str):
 
 
 if __name__ == '__main__':
-    port = int(os.getenv('PORT', 5000))
-    debug = os.getenv('FLASK_DEBUG', 'false').lower() == 'true'
-    app.run(host='0.0.0.0', port=port, debug=debug)
+    app.run(host='0.0.0.0', port=5000, debug=True)
