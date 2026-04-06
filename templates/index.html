@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Weather Monitor</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Global Weather Monitor</h1>
+            <p class="subtitle">Real-time weather data from major cities worldwide</p>
+            <div class="controls">
+                <input type="text" id="search" placeholder="Search city..." class="search-input">
+                <button id="refresh" class="btn-refresh">
+                    <span class="refresh-icon">&#8635;</span> Refresh
+                </button>
+                <div class="unit-toggle">
+                    <button id="unit-c" class="unit-btn active">°C</button>
+                    <button id="unit-f" class="unit-btn">°F</button>
+                </div>
+            </div>
+            <div class="last-updated">
+                Last updated: <span id="update-time">--</span>
+            </div>
+        </header>
+
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Loading weather data...</p>
+        </div>
+
+        <div id="error" class="error hidden">
+            <p id="error-message"></p>
+            <button onclick="loadWeather()" class="btn-retry">Retry</button>
+        </div>
+
+        <main id="weather-grid" class="weather-grid">
+        </main>
+
+        <footer>
+            <p>Data provided by <a href="https://openweathermap.org/" target="_blank">OpenWeatherMap</a></p>
+            <p>Auto-refreshes every 5 minutes</p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
