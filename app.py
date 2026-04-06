@@ -77,14 +77,42 @@ def index():
     return render_template('index.html')
 
 
+def get_demo_data() -> list[dict]:
+    """Return demo weather data when API key is not configured."""
+    import random
+    demo_weather = [
+        ('Clear Sky', '01d'), ('Few Clouds', '02d'), ('Scattered Clouds', '03d'),
+        ('Broken Clouds', '04d'), ('Light Rain', '10d'), ('Sunny', '01d')
+    ]
+    data = []
+    for city in CITIES:
+        desc, icon = random.choice(demo_weather)
+        base_temp = 20 + random.randint(-15, 20)
+        data.append({
+            'city': city['name'],
+            'country': city['country'],
+            'temp': base_temp,
+            'feels_like': base_temp + random.randint(-3, 3),
+            'humidity': random.randint(30, 90),
+            'description': desc,
+            'icon': icon,
+            'wind_speed': round(random.uniform(5, 30), 1),
+            'pressure': random.randint(1000, 1025),
+            'timestamp': datetime.utcnow().isoformat()
+        })
+    return data
+
+
 @app.route('/api/weather')
 def get_all_weather():
     """Get weather data for all cities."""
     if not API_KEY:
         return jsonify({
-            'error': 'API key not configured',
-            'message': 'Please set OPENWEATHER_API_KEY environment variable'
-        }), 500
+            'data': get_demo_data(),
+            'updated': datetime.utcnow().isoformat(),
+            'count': len(CITIES),
+            'demo': True
+        })
 
     weather_data = []
     for city in CITIES:
